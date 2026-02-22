@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Churn Intelligence — Team Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+
+  /* PASSWORD SCREEN */
+  #passwordScreen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #passwordScreen::before {
+    content: '';
+    position: fixed;
+    top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,229,160,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  #passwordScreen::after {
+    content: '';
+    position: fixed;
+    bottom: -200px; right: -200px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(123,97,255,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .pw-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    width: 360px;
+    max-width: 90vw;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .pw-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto 20px;
+  }
+  .pw-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+  }
+  .pw-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+  .pw-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 1rem;
+    text-align: center;
+    letter-spacing: 0.15em;
+    outline: none;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+  .pw-input:focus { border-color: var(--accent); }
+  .pw-input.shake {
+    animation: shake 0.4s ease;
+    border-color: var(--accent3);
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  .pw-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--accent), #00b37d);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .pw-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .pw-error {
+    font-size: 0.72rem;
+    color: var(--accent3);
+    font-family: 'DM Mono', monospace;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+  .pw-hint {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 16px;
+    font-family: 'DM Mono', monospace;
+    opacity: 0.6;
+  }
+  #appContent { display: none; }
+
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181b22;
+    --border: rgba(255,255,255,0.07);
+    --accent: #00e5a0;
+    --accent2: #7b61ff;
+    --accent3: #ff6b6b;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --phase1: #00e5a0;
+    --phase2: #7b61ff;
+    --phase3: #ff9f43;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,229,160,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -200px; right: -200px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(123,97,255,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* SETTINGS MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 420px;
+    max-width: 90vw;
+  }
+  .modal h3 { font-family: 'Syne', sans-serif; font-size: 1.2rem; margin-bottom: 8px; }
+  .modal p { font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+  .modal input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    margin-bottom: 12px;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 10px; }
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #000; flex: 1; }
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-secondary:hover { color: var(--text); }
+
+  /* HEADER */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 28px 40px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+  .logo-text h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .logo-text span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .sync-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .sync-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .sync-dot.synced { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .sync-dot.syncing { background: var(--accent2); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--accent3); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+  .settings-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 14px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .settings-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+  .last-sync { font-size: 0.68rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  /* MAIN LAYOUT */
+  main {
+    position: relative;
+    z-index: 5;
+    padding: 32px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* TOP STATS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.12); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.green::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .stat-card.purple::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .stat-card.orange::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .stat-card.blue::before { background: linear-gradient(90deg, #38bdf8, transparent); }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /* OVERALL PROGRESS */
+  .overall-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 28px;
+  }
+  .overall-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .overall-bar-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .overall-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--accent);
+  }
+  .progress-track {
+    background: var(--surface2);
+    border-radius: 100px;
+    height: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 20px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+    border-radius: 100px;
+  }
+  .phase-markers {
+    display: flex;
+    margin-top: 10px;
+  }
+  .phase-marker {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .phase-marker-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+
+  /* GRID */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* PHASE CARDS */
+  .phase-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .phase-header {
+    padding: 18px 22px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .phase-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .phase-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    padding: 3px 8px;
+    border-radius: 100px;
+    font-weight: 500;
+  }
+  .phase-badge.p1 { background: rgba(0,229,160,0.15); color: var(--phase1); }
+  .phase-badge.p2 { background: rgba(123,97,255,0.15); color: var(--phase2); }
+  .phase-badge.p3 { background: rgba(255,159,67,0.15); color: var(--phase3); }
+
+  .phase-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  .phase-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+  .phase-body { padding: 16px 22px 20px; }
+
+  /* WEEK SECTIONS */
+  .week-section { margin-bottom: 14px; }
+  .week-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .week-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+  .week-dates {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  /* TASKS */
+  .task-list { display: flex; flex-direction: column; gap: 5px; }
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    group: true;
+  }
+  .task-item:hover { background: var(--surface2); }
+  .task-check {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid var(--muted);
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    position: relative;
+    top: 1px;
+  }
+  .task-item.done .task-check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .task-check svg { display: none; }
+  .task-item.done .task-check svg { display: block; }
+
+  .task-content { flex: 1; }
+  .task-name {
+    font-size: 0.82rem;
+    font-weight: 400;
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+  .task-item.done .task-name {
+    color: var(--muted);
+    text-decoration: line-through;
+    text-decoration-color: rgba(107,114,128,0.5);
+  }
+  .task-sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+    font-style: italic;
+  }
+  .task-assignee {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    border-radius: 100px;
+    padding: 2px 7px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+
+  /* TEAM SECTION */
+  .team-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .member-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--surface2);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .avatar.you { background: linear-gradient(135deg, var(--accent), #00b37d); color: #000; }
+  .avatar.kelvin { background: linear-gradient(135deg, var(--accent2), #5a45cc); color: #fff; }
+
+  .member-info { flex: 1; }
+  .member-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+  .member-role { font-size: 0.72rem; color: var(--muted); }
+  .member-stats {
+    text-align: right;
+  }
+  .member-completed {
+    font-family: 'DM Mono', monospace;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .member-total { font-size: 0.7rem; color: var(--muted); }
+
+  /* TIMELINE */
+  .timeline-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .timeline-weeks {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .timeline-week {
+    text-align: center;
+  }
+  .tw-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  .tw-bar {
+    height: 48px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .tw-bar.current { border-color: var(--accent); box-shadow: 0 0 12px rgba(0,229,160,0.15); }
+  .tw-bar.done { background: rgba(0,229,160,0.12); border-color: rgba(0,229,160,0.2); }
+  .tw-fill {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    border-radius: 0 0 5px 5px;
+    transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .tw-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tw-label.p1 { color: var(--phase1); }
+  .tw-label.p2 { color: var(--phase2); }
+  .tw-label.p3 { color: var(--phase3); }
+
+  /* NOTIFICATION */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 0.8rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent);
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { border-color: var(--accent3); color: var(--accent3); }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .section-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .section-header p { font-size: 0.78rem; color: var(--muted); }
+
+  /* Current week indicator */
+  .current-week-banner {
+    background: linear-gradient(135deg, rgba(0,229,160,0.08), rgba(123,97,255,0.05));
+    border: 1px solid rgba(0,229,160,0.15);
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.78rem;
+  }
+  .cw-pulse {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(0,229,160,0.4);
+    animation: ripple 2s infinite;
+    flex-shrink: 0;
+  }
+  @keyframes ripple {
+    0% { box-shadow: 0 0 0 0 rgba(0,229,160,0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(0,229,160,0); }
+    100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
+  }
+  .cw-text { flex: 1; }
+  .cw-text strong { color: var(--accent); font-weight: 600; }
+  .cw-dates { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); }
+
+  /* Add note toggle */
+  .note-area {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .note-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 6px; font-family: 'DM Mono', monospace; }
+  textarea.note-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    resize: none;
+    outline: none;
+    min-height: 52px;
+    line-height: 1.5;
+  }
+  textarea.note-input:focus { border-color: rgba(0,229,160,0.3); }
+  textarea.note-input::placeholder { color: var(--muted); opacity: 0.5; }
+
+  @media (max-width: 1100px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .timeline-weeks { grid-template-columns: repeat(5, 1fr); }
+    main { padding: 20px; }
+    header { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SYNC MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal" style="width:480px;max-width:95vw">
+    <h3 style="margin-bottom:6px">🔄 Sync Progress</h3>
+    <p style="margin-bottom:16px">Progress is saved in your browser. Use the tabs below to share with Kelvin.</p>
+    <div style="display:flex;gap:6px;margin-bottom:16px">
+      <button id="tabExport" onclick="switchTab('export')" style="flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--accent);background:rgba(0,229,160,0.1);color:var(--accent);font-family:'Syne',sans-serif;font-size:0.75rem;cursor:pointer;font-weight:700">📤 Share Mine</button>
+      <button id="tabImport" onclick="switchTab('import')" style="flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:0.75rem;cursor:pointer;font-weight:700">📥 Load Kelvin's</button>
+      <button id="tabJsonbin" onclick="switchTab('jsonbin')" style="flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:0.75rem;cursor:pointer;font-weight:700">☁ JSONBin</button>
+    </div>
+    <div id="panelExport">
+      <div class="note-label" style="margin-bottom:6px">Copy this code and send to Kelvin (WhatsApp, email, etc.):</div>
+      <textarea id="exportCode" class="note-input" readonly style="min-height:90px;font-size:0.65rem;font-family:'DM Mono',monospace" onclick="this.select()"></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="copyExportCode()">📋 Copy Code</button>
+    </div>
+    <div id="panelImport" style="display:none">
+      <div class="note-label" style="margin-bottom:6px">Paste Kelvin's code — it will merge with yours (keeps all checked tasks):</div>
+      <textarea id="importCode" class="note-input" placeholder="Paste code here…" style="min-height:90px;font-size:0.65rem;font-family:'DM Mono',monospace"></textarea>
+      <div id="importStatus" style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace;min-height:16px;margin:8px 0"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="doImport()">Merge & Apply</button>
+    </div>
+    <div id="panelJsonbin" style="display:none">
+      <div style="background:rgba(123,97,255,0.08);border:1px solid rgba(123,97,255,0.2);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:0.78rem;font-weight:600;color:var(--accent2);margin-bottom:6px">💡 To fix the CORS error permanently:</div>
+        <div style="font-size:0.75rem;color:var(--text);line-height:1.8">
+          1. Upload this HTML file to a <strong>GitHub repo</strong><br>
+          2. Settings → Pages → Deploy from branch (main)<br>
+          3. Open the live <code style="color:var(--accent)">github.io</code> URL<br>
+          4. JSONBin will work perfectly from there ✓
+        </div>
+      </div>
+      <div class="note-label" style="margin-bottom:6px">API Key (from jsonbin.io → Profile → API Keys):</div>
+      <input type="password" id="apiKeyInput" placeholder="Master Key ($2a$10$...)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.8rem;outline:none;margin-bottom:8px" />
+      <div class="note-label" style="margin-bottom:6px">Bin ID (leave blank to auto-create):</div>
+      <input type="text" id="binIdInput" placeholder="Leave empty — we'll create one" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.8rem;outline:none;margin-bottom:8px" />
+      <div id="modalStatus" style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace;min-height:16px;margin-bottom:8px"></div>
+      <button class="btn btn-primary" id="connectBtn" style="width:100%" onclick="saveSettings()">Connect JSONBin</button>
+    </div>
+    <button class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="closeSettings()">Close</button>
+  </div>
+</div>
+
+
+<!-- PASSWORD SCREEN -->
+<div id="passwordScreen">
+  <div class="pw-box">
+    <div class="pw-icon">🧠</div>
+    <div class="pw-title">Churn Intelligence</div>
+    <div class="pw-sub">Team dashboard — authorized access only</div>
+    <input class="pw-input" id="pwInput" type="password" placeholder="••••••••" maxlength="32"
+      onkeydown="if(event.key==='Enter') checkPassword()" autofocus />
+    <button class="pw-btn" onclick="checkPassword()">Enter Dashboard</button>
+    <div class="pw-error" id="pwError"></div>
+    <div class="pw-hint">Shared with: Givemore & Kelvin</div>
+  </div>
+</div>
+
+<!-- APP CONTENT -->
+<div id="appContent">
+
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🧠</div>
+    <div class="logo-text">
+      <h1>Churn Intelligence</h1>
+      <span>TEAM DASHBOARD · 2025</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="sync-status">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">Not configured</span>
+    </div>
+    <div class="last-sync" id="lastSyncTime"></div>
+    <button class="settings-btn" onclick="openSettings()">🔄 Sync</button>
+  </div>
+</header>
+
+<main>
+  <!-- CURRENT WEEK BANNER -->
+  <div class="current-week-banner" id="currentWeekBanner">
+    <div class="cw-pulse"></div>
+    <div class="cw-text">
+      <strong id="cwTitle">Loading...</strong> — <span id="cwDesc"></span>
+    </div>
+    <div class="cw-dates" id="cwDates"></div>
+  </div>
+
+  <!-- TOP STATS -->
+  <div class="stats-row">
+    <div class="stat-card green">
+      <div class="stat-label">Overall Progress</div>
+      <div class="stat-value" id="statOverall">0%</div>
+      <div class="stat-sub" id="statTasksDone">0 / 0 tasks complete</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label">Current Phase</div>
+      <div class="stat-value" id="statPhase" style="font-size:1.2rem;padding-top:8px">—</div>
+      <div class="stat-sub" id="statPhaseSub"></div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">Days Elapsed</div>
+      <div class="stat-value" id="statDays">0</div>
+      <div class="stat-sub">Since Feb 9, 2025</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">Current Week</div>
+      <div class="stat-value" id="statWeek">W1</div>
+      <div class="stat-sub" id="statWeekDates"></div>
+    </div>
+  </div>
+
+  <!-- OVERALL PROGRESS BAR -->
+  <div class="overall-bar">
+    <div class="overall-bar-header">
+      <h2>Project Progress</h2>
+      <div class="overall-pct" id="overallPctLabel">0%</div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="overallFill" style="width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div>
+    </div>
+    <div class="phase-markers" style="gap:24px;margin-top:10px">
+      <div class="phase-marker"><div class="phase-marker-dot" style="background:var(--phase1)"></div> Phase 1 — Research</div>
+      <div class="phase-marker"><div class="phase-marker-dot" style="background:var(--phase2)"></div> Phase 2 — Build & Test</div>
+      <div class="phase-marker"><div class="phase-marker-dot" style="background:var(--phase3)"></div> Phase 3 — Sell & Deploy</div>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="timeline-card" style="margin-bottom:28px">
+    <div class="section-title">Timeline Overview</div>
+    <div class="timeline-weeks" id="timelineWeeks"></div>
+  </div>
+
+  <!-- PHASE CARDS + TEAM -->
+  <div id="phaseCards"></div>
+
+  <!-- TEAM -->
+  <div class="grid-2" style="margin-top:20px">
+    <div class="team-card">
+      <div class="section-title">Team Members</div>
+      <div class="member-card">
+        <div class="avatar you">G</div>
+        <div class="member-info">
+          <div class="member-name">Givemore</div>
+          <div class="member-role">Lead Developer</div>
+        </div>
+        <div class="member-stats">
+          <div class="member-completed" id="youDone">0</div>
+          <div class="member-total" id="youTotal">/ 0 tasks</div>
+        </div>
+      </div>
+      <div class="member-card">
+        <div class="avatar kelvin">K</div>
+        <div class="member-info">
+          <div class="member-name">Kelvin</div>
+          <div class="member-role">Lead Developer</div>
+        </div>
+        <div class="member-stats">
+          <div class="member-completed" id="kelvinDone">0</div>
+          <div class="member-total" id="kelvinTotal">/ 0 tasks</div>
+        </div>
+      </div>
+    </div>
+    <div class="timeline-card">
+      <div class="section-title">Phase Breakdown</div>
+      <div id="phaseBreakdown"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ─── PASSWORD ──────────────────────────────────────────────────────────────────
+const CORRECT_PASSWORD = 'churnteam2025';
+function checkPassword() {
+  const val = document.getElementById('pwInput').value;
+  const errEl = document.getElementById('pwError');
+  if (val === CORRECT_PASSWORD) {
+    sessionStorage.setItem('ci_auth', '1');
+    document.getElementById('passwordScreen').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+    init();
+  } else {
+    errEl.textContent = 'Incorrect password — try again';
+    const input = document.getElementById('pwInput');
+    input.classList.add('shake');
+    input.value = '';
+    setTimeout(() => input.classList.remove('shake'), 500);
+  }
+}
+
+// ─── DATA STRUCTURE ───────────────────────────────────────────────────────────
+const PROJECT_START = new Date('2025-02-09');
+
+const phases = [
+  {
+    id: 'p1', label: 'PHASE 1', name: 'Research', cls: 'p1', color: 'var(--phase1)',
+    weeks: [
+      {
+        id: 'w1', label: 'Week 1', subtitle: 'Model Intelligence Research',
+        dateOffset: 0,
+        tasks: [
+          { id: 't1', text: 'Literature & Industry Review', sub: 'Behavioral churn, time-series, imbalanced classification, XAI', assignee: 'both' },
+          { id: 't2', text: 'Feature Engineering: Recency / Frequency / Monetary', sub: 'Designing feature categories', assignee: 'both' },
+          { id: 't3', text: 'Advanced Feature Engineering Research', sub: 'Rolling windows, slope calculations, lag features', assignee: 'both' },
+        ]
+      },
+      {
+        id: 'w2', label: 'Week 2', subtitle: 'Modeling Strategy & Validation',
+        dateOffset: 7,
+        tasks: [
+          { id: 't4', text: 'Model Selection Research', sub: 'LR vs Random Forest vs LightGBM vs XGBoost', assignee: 'both' },
+          { id: 't5', text: 'Evaluation Strategy Definition', sub: 'Train/test split, Precision@K, Recall on high-risk', assignee: 'both' },
+          { id: 't6', text: 'Business Simulation Framework', sub: 'Revenue saved metric design', assignee: 'both' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'p2', label: 'PHASE 2', name: 'Build & Test', cls: 'p2', color: 'var(--phase2)',
+    weeks: [
+      {
+        id: 'w3', label: 'Week 3', subtitle: 'Data Engineering & Feature Creation',
+        dateOffset: 14,
+        tasks: [
+          { id: 't7', text: 'Data Cleaning & Missing Value Handling', assignee: 'both' },
+          { id: 't8', text: 'Rolling Window Feature Creation', sub: 'Ratio & slope calculations', assignee: 'both' },
+          { id: 't9', text: 'Recency Metrics & Target Variable Creation', assignee: 'both' },
+        ]
+      },
+      {
+        id: 'w4', label: 'Week 4', subtitle: 'Model Training & Optimization',
+        dateOffset: 21,
+        tasks: [
+          { id: 't10', text: 'Train Baseline Model', assignee: 'both' },
+          { id: 't11', text: 'Train Advanced Model', assignee: 'both' },
+          { id: 't12', text: 'Hyperparameter Tuning & Class Imbalance Handling', assignee: 'both' },
+          { id: 't13', text: 'Feature Importance Analysis', assignee: 'both' },
+        ]
+      },
+      {
+        id: 'w5', label: 'Week 5', subtitle: 'Validation & Simulation',
+        dateOffset: 28,
+        tasks: [
+          { id: 't14', text: 'Back-testing on Historical Periods', assignee: 'both' },
+          { id: 't15', text: 'Revenue Decline Simulation', assignee: 'both' },
+          { id: 't16', text: 'Precision@Top K Performance Tracking', assignee: 'both' },
+          { id: 't17', text: 'Model Stability Testing', assignee: 'both' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'p3', label: 'PHASE 3', name: 'Sell & Deploy', cls: 'p3', color: 'var(--phase3)',
+    weeks: [
+      {
+        id: 'w6', label: 'Week 6', subtitle: 'Packaging Product',
+        dateOffset: 35,
+        tasks: [
+          { id: 't18', text: 'Executive Summary', assignee: 'both' },
+          { id: 't19', text: 'ROI Projection Model', assignee: 'both' },
+          { id: 't20', text: 'Risk Dashboard Prototype', assignee: 'both' },
+          { id: 't21', text: 'Case Simulation Results', assignee: 'both' },
+        ]
+      },
+      {
+        id: 'w7', label: 'Week 7–8', subtitle: 'Pilot Strategy',
+        dateOffset: 42,
+        tasks: [
+          { id: 't22', text: 'Offer 3-Month Historical Data Pilot', assignee: 'both' },
+          { id: 't23', text: 'Run Model on Bank Data', assignee: 'both' },
+          { id: 't24', text: 'Present High-Risk Segments', assignee: 'both' },
+          { id: 't25', text: 'Demonstrate Missed Revenue Detection', assignee: 'both' },
+        ]
+      },
+      {
+        id: 'w8', label: 'Week 9+', subtitle: 'Deployment Options',
+        dateOffset: 56,
+        tasks: [
+          { id: 't26', text: 'Deployment Planning & Options', assignee: 'both' },
+          { id: 't27', text: 'Client Onboarding Strategy', assignee: 'both' },
+          { id: 't28', text: 'Handoff Documentation', assignee: 'both' },
+        ]
+      }
+    ]
+  }
+];
+
+// ─── STATE ─────────────────────────────────────────────────────────────────────
+let completedTasks = {};
+let notes = {};
+let binId = '';
+let apiKey = '';
+let syncTimeout = null;
+
+// ─── SYNC (LOCAL + EXPORT/IMPORT) ─────────────────────────────────────────────
+function openSettings() {
+  switchTab('export');
+  const code = btoa(JSON.stringify({ completedTasks, ts: Date.now() }));
+  document.getElementById('exportCode').value = code;
+  document.getElementById('importCode').value = '';
+  document.getElementById('importStatus').textContent = '';
+  if (apiKey) document.getElementById('apiKeyInput').value = apiKey;
+  if (binId) document.getElementById('binIdInput').value = binId;
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+function switchTab(tab) {
+  ['export','import','jsonbin'].forEach(t => {
+    document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (t === tab) {
+      btn.style.borderColor = 'var(--accent)';
+      btn.style.background = 'rgba(0,229,160,0.1)';
+      btn.style.color = 'var(--accent)';
+    } else {
+      btn.style.borderColor = 'var(--border)';
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--muted)';
+    }
+  });
+  if (tab === 'export') {
+    const code = btoa(JSON.stringify({ completedTasks, ts: Date.now() }));
+    document.getElementById('exportCode').value = code;
+  }
+}
+function copyExportCode() {
+  const ta = document.getElementById('exportCode');
+  ta.select();
+  document.execCommand('copy');
+  showToast('✓ Code copied! Send it to Kelvin.');
+}
+function doImport() {
+  const raw = document.getElementById('importCode').value.trim();
+  const statusEl = document.getElementById('importStatus');
+  if (!raw) { statusEl.textContent = '⚠ Nothing to import.'; statusEl.style.color = 'var(--accent3)'; return; }
+  try {
+    const data = JSON.parse(atob(raw));
+    if (!data.completedTasks) throw new Error('Invalid code');
+    let merged = 0;
+    Object.keys(data.completedTasks).forEach(k => {
+      if (data.completedTasks[k] && !completedTasks[k]) { completedTasks[k] = true; merged++; }
+    });
+    saveToLocal();
+    renderAll();
+    closeSettings();
+    showToast('✓ Merged ' + merged + ' new completed tasks from Kelvin!');
+  } catch(e) {
+    statusEl.textContent = '✗ Invalid code — double-check and try again.';
+    statusEl.style.color = 'var(--accent3)';
+  }
+}
+function setModalStatus(msg, color = 'var(--muted)') {
+  const el = document.getElementById('modalStatus');
+  if (el) { el.textContent = msg; el.style.color = color; }
+}
+async function saveSettings() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { setModalStatus('⚠ Paste your API Key first.', 'var(--accent3)'); return; }
+  apiKey = key;
+  const btn = document.getElementById('connectBtn');
+  btn.textContent = 'Working…'; btn.disabled = true;
+  setModalStatus('Connecting…', 'var(--accent2)');
+  const existingBin = document.getElementById('binIdInput').value.trim();
+  if (existingBin) binId = existingBin;
+  if (!binId) {
+    try {
+      const res = await fetch('https://api.jsonbin.io/v3/b', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey, 'X-Bin-Name': 'Churn Intelligence' },
+        body: JSON.stringify({ completedTasks, ts: Date.now() })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || res.status);
+      binId = data.metadata.id;
+      localStorage.setItem('ci_binId', binId);
+      setModalStatus('✓ Bin created: ' + binId, 'var(--accent)');
+    } catch(e) {
+      setModalStatus('✗ ' + e.message, 'var(--accent3)');
+      btn.textContent = 'Connect JSONBin'; btn.disabled = false; return;
+    }
+  }
+  localStorage.setItem('ci_apiKey', apiKey);
+  btn.textContent = 'Connected ✓';
+  setTimeout(async () => { closeSettings(); btn.textContent = 'Connect JSONBin'; btn.disabled = false; await loadFromBin(); }, 1000);
+}
+function loadSettingsFromStorage() {
+  binId = localStorage.getItem('ci_binId') || '';
+  apiKey = localStorage.getItem('ci_apiKey') || '';
+}
+// ─── LOCAL STORAGE ─────────────────────────────────────────────────────────────
+function saveToLocal() {
+  localStorage.setItem('ci_tasks', JSON.stringify(completedTasks));
+}
+function loadFromLocal() {
+  const saved = localStorage.getItem('ci_tasks');
+  if (saved) { try { completedTasks = JSON.parse(saved); } catch(e) {} }
+}
+
+// ─── JSONBIN SYNC ──────────────────────────────────────────────────────────────
+function setSyncStatus(state) {
+  const dot = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  dot.className = 'sync-dot';
+  if (state === 'synced') { dot.classList.add('synced'); label.textContent = 'Cloud synced'; }
+  else if (state === 'syncing') { dot.classList.add('syncing'); label.textContent = 'Syncing…'; }
+  else if (state === 'error') { dot.classList.add('error'); label.textContent = 'Sync error'; }
+  else if (state === 'local') { dot.classList.add('synced'); label.textContent = 'Saved locally'; }
+  else { label.textContent = 'Local only'; }
+}
+
+async function loadFromBin() {
+  if (!binId || !apiKey) return;
+  setSyncStatus('syncing');
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+      headers: { 'X-Access-Key': apiKey }
+    });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const record = data.record;
+    if (record.completedTasks) completedTasks = record.completedTasks;
+    if (record.notes) notes = record.notes;
+    setSyncStatus('synced');
+    document.getElementById('lastSyncTime').textContent = 'Last sync: ' + new Date().toLocaleTimeString();
+    renderAll();
+    showToast('✓ Synced from JSONBin');
+  } catch(e) {
+    setSyncStatus('error');
+    showToast('✗ Sync failed: ' + e.message, true);
+  }
+}
+
+async function saveToBin() {
+  if (!binId || !apiKey) return;
+  setSyncStatus('syncing');
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Access-Key': apiKey
+      },
+      body: JSON.stringify({ completedTasks, notes, lastUpdated: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error(res.status);
+    setSyncStatus('synced');
+    document.getElementById('lastSyncTime').textContent = 'Last sync: ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    setSyncStatus('error');
+    showToast('✗ Sync failed', true);
+  }
+}
+
+function scheduleSave() {
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(saveToBin, 1500);
+}
+
+// ─── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+// ─── DATE UTILS ───────────────────────────────────────────────────────────────
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+function fmtDate(d) {
+  return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+}
+function getCurrentWeekIndex() {
+  const now = new Date();
+  const diff = Math.floor((now - PROJECT_START) / (7 * 24 * 3600 * 1000));
+  return Math.max(0, diff);
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function toggleTask(taskId) {
+  completedTasks[taskId] = !completedTasks[taskId];
+  saveToLocal();
+  renderAll();
+  scheduleSave();
+}
+
+function allTasks() {
+  return phases.flatMap(p => p.weeks.flatMap(w => w.tasks));
+}
+
+function renderStats() {
+  const all = allTasks();
+  const done = all.filter(t => completedTasks[t.id]).length;
+  const pct = Math.round((done / all.length) * 100);
+
+  document.getElementById('statOverall').textContent = pct + '%';
+  document.getElementById('statTasksDone').textContent = done + ' / ' + all.length + ' tasks complete';
+  document.getElementById('overallFill').style.width = pct + '%';
+  document.getElementById('overallPctLabel').textContent = pct + '%';
+
+  const days = Math.floor((new Date() - PROJECT_START) / (24 * 3600 * 1000));
+  document.getElementById('statDays').textContent = days;
+
+  const wi = getCurrentWeekIndex();
+  document.getElementById('statWeek').textContent = 'W' + (wi + 1);
+
+  // All weeks flat
+  const allWeeks = phases.flatMap(p => p.weeks);
+  const curWeek = allWeeks[Math.min(wi, allWeeks.length - 1)];
+  const wkStart = addDays(PROJECT_START, curWeek.dateOffset);
+  const wkEnd = addDays(wkStart, 6);
+  document.getElementById('statWeekDates').textContent = fmtDate(wkStart) + ' – ' + fmtDate(wkEnd);
+
+  // Current phase
+  let curPhase = phases[0];
+  for (const p of phases) {
+    for (const w of p.weeks) {
+      if (getCurrentWeekIndex() * 7 >= w.dateOffset) curPhase = p;
+    }
+  }
+  document.getElementById('statPhase').textContent = curPhase.name;
+  document.getElementById('statPhaseSub').textContent = curPhase.label;
+
+  // Current week banner
+  document.getElementById('cwTitle').textContent = curWeek.label;
+  document.getElementById('cwDesc').textContent = curWeek.subtitle;
+  document.getElementById('cwDates').textContent = fmtDate(wkStart) + ' – ' + fmtDate(wkEnd);
+
+  // Team stats
+  const youTasks = all.filter(t => t.assignee === 'you' || t.assignee === 'both');
+  const kelvinTasks = all.filter(t => t.assignee === 'kelvin' || t.assignee === 'both');
+  document.getElementById('youDone').textContent = youTasks.filter(t => completedTasks[t.id]).length;
+  document.getElementById('youTotal').textContent = '/ ' + youTasks.length + ' tasks';
+  document.getElementById('kelvinDone').textContent = kelvinTasks.filter(t => completedTasks[t.id]).length;
+  document.getElementById('kelvinTotal').textContent = '/ ' + kelvinTasks.length + ' tasks';
+}
+
+function renderTimeline() {
+  const allWeeks = phases.flatMap((p, pi) => p.weeks.map(w => ({ ...w, phase: p, phaseIdx: pi })));
+  const wi = getCurrentWeekIndex();
+  const container = document.getElementById('timelineWeeks');
+  container.innerHTML = '';
+  allWeeks.forEach((w, i) => {
+    const tasks = w.tasks;
+    const done = tasks.filter(t => completedTasks[t.id]).length;
+    const pct = tasks.length ? (done / tasks.length) * 100 : 0;
+    const isCur = i === Math.min(wi, allWeeks.length - 1);
+    const isPast = i < wi;
+    const div = document.createElement('div');
+    div.className = 'timeline-week';
+    div.innerHTML = `
+      <div class="tw-num">W${i + 1}</div>
+      <div class="tw-bar ${isCur ? 'current' : ''} ${isPast && pct > 0 ? 'done' : ''}">
+        <div class="tw-fill" style="height:${pct}%;background:${w.phase.color};opacity:0.7"></div>
+      </div>
+      <div class="tw-label ${w.phase.cls}">${w.subtitle.split(' ').slice(0,2).join(' ')}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderPhaseCards() {
+  const container = document.getElementById('phaseCards');
+  container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'grid-3';
+
+  phases.forEach(phase => {
+    const allPhaseTasks = phase.weeks.flatMap(w => w.tasks);
+    const donePhaseTasks = allPhaseTasks.filter(t => completedTasks[t.id]).length;
+    const pct = allPhaseTasks.length ? Math.round((donePhaseTasks / allPhaseTasks.length) * 100) : 0;
+
+    const card = document.createElement('div');
+    card.className = 'phase-card';
+
+    let weeksHtml = '';
+    phase.weeks.forEach(week => {
+      const wStart = addDays(PROJECT_START, week.dateOffset);
+      const wEnd = addDays(wStart, 6);
+      const tasksHtml = week.tasks.map(task => `
+        <div class="task-item ${completedTasks[task.id] ? 'done' : ''}" onclick="toggleTask('${task.id}')">
+          <div class="task-check">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4L3.5 6.5L9 1" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-content">
+            <div class="task-name">${task.text}</div>
+            ${task.sub ? `<div class="task-sub">${task.sub}</div>` : ''}
+          </div>
+          <div class="task-assignee">${task.assignee === 'both' ? 'G + K' : task.assignee === 'you' ? 'Givemore' : 'Kelvin'}</div>
+        </div>
+      `).join('');
+      weeksHtml += `
+        <div class="week-section">
+          <div class="week-header">
+            <div class="week-title">${week.label} — ${week.subtitle}</div>
+            <div class="week-dates">${fmtDate(wStart)} – ${fmtDate(wEnd)}</div>
+          </div>
+          <div class="task-list">${tasksHtml}</div>
+        </div>
+      `;
+    });
+
+    card.innerHTML = `
+      <div class="phase-header">
+        <div class="phase-title">
+          <div class="phase-badge ${phase.cls}">${phase.label}</div>
+          <div class="phase-name">${phase.name}</div>
+        </div>
+        <div class="phase-pct" style="color:${phase.color}">${pct}%</div>
+      </div>
+      <div class="phase-body">
+        <div class="progress-track" style="margin-bottom:14px">
+          <div class="progress-fill" style="width:${pct}%;background:${phase.color}"></div>
+        </div>
+        ${weeksHtml}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  container.appendChild(grid);
+}
+
+function renderPhaseBreakdown() {
+  const container = document.getElementById('phaseBreakdown');
+  container.innerHTML = '';
+  phases.forEach(phase => {
+    const all = phase.weeks.flatMap(w => w.tasks);
+    const done = all.filter(t => completedTasks[t.id]).length;
+    const pct = all.length ? Math.round((done / all.length) * 100) : 0;
+    const div = document.createElement('div');
+    div.style.cssText = 'margin-bottom:14px';
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${phase.color}"></div>
+          <span style="font-size:0.8rem;font-family:'DM Mono',monospace">${phase.label} · ${phase.name}</span>
+        </div>
+        <span style="font-family:'DM Mono',monospace;font-size:0.78rem;color:${phase.color}">${done}/${all.length}</span>
+      </div>
+      <div class="progress-track" style="height:6px">
+        <div class="progress-fill" style="width:${pct}%;background:${phase.color}"></div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderAll() {
+  renderStats();
+  renderTimeline();
+  renderPhaseCards();
+  renderPhaseBreakdown();
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  loadSettingsFromStorage();
+  loadFromLocal();
+  renderAll();
+  if (binId && apiKey) {
+    await loadFromBin();
+  } else {
+    setSyncStatus('local');
+  }
+  setInterval(async () => {
+    if (binId && apiKey) await loadFromBin();
+  }, 60000);
+}
+
+// Check if already authenticated this session
+if (sessionStorage.getItem('ci_auth') === '1') {
+  document.getElementById('passwordScreen').style.display = 'none';
+  document.getElementById('appContent').style.display = 'block';
+  init();
+}
+</script>
+</div><!-- end appContent -->
+</body>
+</html>
